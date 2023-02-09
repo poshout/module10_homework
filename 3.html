@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Задание 3</title>
+<style>
+  .btn {
+  
+}
+.chat {
+  display: block;
+  text-align-last: right;
+  margin-top: 10px;
+  border: 2px solid;
+  min-height: 200px;
+  width: 350px;
+}
+
+.msg_sent {
+  display: inline-block;
+  padding: 0px 10px;
+  margin-top: 10px;
+  margin-right: 10px;
+  border: 1px solid;
+  max-width: 170px;
+  text-align-last: left;
+}
+
+.msg_received {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 0px 10px;
+  border: 1px solid;
+  width: auto;
+  margin-left: 10px;
+  width: fit-content;
+  max-width: 170px;
+  text-align-last: left;
+
+}
+</style>
+</head>
+<body>
+<input id="msg_input"placeholder="Введите текст сообщения"></input>
+<button class="btn"> 
+Отправить
+</button>
+  <button class="geo"> 
+Гео-локация
+</button>
+<p id = "status"></p>
+<div class="chat">
+  <div class="msgs_sent">
+  </div>
+    <div class="msgs_received">
+  </div>
+</div>
+<script>
+const wsUri = "wss://echo-ws-service.herokuapp.com";
+const msg_input = document.getElementById('msg_input').value;
+const chatNode = document.querySelector('.chat');
+const mapLink = document.querySelector('#map-link');
+const status = document.querySelector('#status');
+const geo = document.querySelector('.geo');
+const btn = document.querySelector('.btn');
+
+let websocket;
+
+function writeToScreenSent(msg_input) {
+  let pre = document.createElement("div");
+  pre.classList.add("msg_sent");
+  pre.innerHTML = msg_input;
+  chatNode.appendChild(pre);
+}
+
+function writeToScreenReceived(msg_input) {
+  let pre = document.createElement("div");
+  pre.classList.add("msg_received");
+  pre.innerHTML = msg_input;
+  chatNode.appendChild(pre);
+}
+
+function writeToScreenGeo (msg_input) {
+  let pre = document.createElement("a");
+  let pre2 = document.createElement("p");
+  pre.classList.add("msg_sent");
+  pre.setAttribute("id","map-link");
+  pre.setAttribute("href", msg_input);
+  pre.textContent = 'Ссылка на карту';
+
+  chatNode.appendChild(pre);
+  chatNode.appendChild(pre2);
+}
+
+btn.addEventListener('click', () => {
+  const msg_input = document.getElementById('msg_input').value;
+  websocket = new WebSocket(wsUri);
+    websocket.onopen = function(evt) {
+    writeToScreenSent(msg_input);
+    websocket.send(msg_input);
+  };
+
+  websocket.onmessage = function(evt) {
+    writeToScreenReceived(evt.data);
+  };
+  
+});
+
+const error = () => {
+  status.textContent = 'Невозможно получить ваше местоположение';
+}
+
+const success = (position) => {
+  const latitude  = position.coords.latitude;
+  const longitude = position.coords.longitude;
+  chatNode.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+  writeToScreenGeo(chatNode.href);
+}
+
+geo.addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    status.textContent = 'Geolocation не поддерживается вашим браузером';
+  } else {
+    navigator.geolocation.getCurrentPosition(success, error);
+  }
+});
+</script>
+</body>
+</html>
